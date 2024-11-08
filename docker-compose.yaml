@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      dockerfile: node.Dockerfile
+    container_name: app
+    networks:
+      - node-network
+    volumes:
+      - ./app:/usr/src/app
+    tty: true
+    depends_on:
+      - db
+
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=OFF --explicit_defaults_for_timestamp
+    container_name: db
+    restart: always
+    tty: true
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+      MYSQL_DATABASE: nodedb
+    networks:
+      - node-network
+
+  proxy:
+    build:
+      dockerfile: nginx.Dockerfile
+    container_name: proxy
+    networks:
+      - node-network
+    volumes:
+      - ./proxy:/var/www/html
+    ports:
+      - "8080:80"
+    tty: true
+    depends_on:
+      - app
+    
+networks:
+  node-network:
+    driver: bridge
