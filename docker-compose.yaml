@@ -1,16 +1,8 @@
-services:
-  app:
-    build:
-      dockerfile: node.Dockerfile
-    container_name: app
-    networks:
-      - node-network
-    volumes:
-      - ./app:/usr/src/app
-    tty: true
-    depends_on:
-      - db
+networks:
+  node-network:
+    driver: bridge
 
+services:
   db:
     image: mysql:5.7
     command: --innodb-use-native-aio=OFF --explicit_defaults_for_timestamp
@@ -24,21 +16,40 @@ services:
       MYSQL_DATABASE: nodedb
     networks:
       - node-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root"]
+      interval: 10s
+      timeout: 30s
+      retries: 12
+
+  app:
+    image: node:lts-alpine3.20
+    container_name: app
+    networks:
+      - node-network
+    volumes:
+      - ./app:/usr/src/app
+    tty: true
+    entrypoint: sh -c "cd /usr/src/app/ && npm install && node index.js"
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/app.started || exit 1"]
+      interval: 10s
+      timeout: 30s
+      retries: 12
+    depends_on:
+      db:
+        condition: service_healthy
 
   proxy:
-    build:
-      dockerfile: nginx.Dockerfile
+    image: nginx:mainline-alpine3.20-slim
     container_name: proxy
     networks:
       - node-network
     volumes:
-      - ./proxy:/var/www/html
+      - ./proxy/conf.d:/etc/nginx/conf.d
     ports:
       - "8080:80"
     tty: true
     depends_on:
-      - app
-    
-networks:
-  node-network:
-    driver: bridge
+      app:
+        condition: service_healthy
