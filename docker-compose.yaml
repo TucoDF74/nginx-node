@@ -10,7 +10,7 @@ services:
     restart: always
     tty: true
     volumes:
-      - ./db:/var/lib/mysql
+      - ./mysql:/var/lib/mysql
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
       MYSQL_DATABASE: nodedb
