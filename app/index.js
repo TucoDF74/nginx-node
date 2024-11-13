@@ -12,6 +12,11 @@ const dbConfig = {
 }
 const dbConnection = mysql.createConnection(dbConfig);
 
+const initDb = function() {
+  const query = `CREATE TABLE IF NOT EXISTS people (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50) NOT NULL);`;
+  dbConnection.query(query);
+}
+
 const insertPeople = function() {
   const query = `INSERT INTO people(name) VALUES ('tucodf74')`;
   dbConnection.query(query);
@@ -31,6 +36,7 @@ app.get('/', function (req, res) {
 
 app.listen(PORT, function() {
   console.log(`O Servidor está rodando na porta ${PORT}`);
+  initDb();
   insertPeople();
   fs.writeFileSync(path.join('/tmp', 'app.started'), '');
 });
